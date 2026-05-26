@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
 from frappe.model.document import Document
 from frappe.utils import getdate
 
@@ -41,17 +42,39 @@ class LoanLead(Document):
 
 	def validate(self):
 		if self.applicant_type == "Individual":
-			self.age = getdate().year - getdate(self.date_of_birth).year
+			date_of_birth = getdate(self.date_of_birth)
+			if date_of_birth > getdate():
+				frappe.throw(_("Date of Birth cannot be in the future."))
+
+			self.age = getdate().year - date_of_birth.year
 
 
 @frappe.whitelist()
-def convert_to_loan_application(loan_lead: Document):
+def convert_to_loan_application(loan_lead: str | Document):
+	if isinstance(loan_lead, str):
+		loan_lead = frappe.get_doc("Loan Lead", loan_lead)
+
+	if not loan_lead.has_permission("read"):
+		frappe.throw(_("You are not permitted to convert this Loan Lead."), frappe.PermissionError)
+
+	if not frappe.has_permission("Loan Application", "create"):
+		frappe.throw(_("You are not permitted to create a Loan Application."), frappe.PermissionError)
+
+	company = frappe.db.get_value("Loan Product", loan_lead.loan_product, "company")
+	if not company:
+		frappe.throw(
+			_("Loan Product {0} is missing an associated company.").format(frappe.bold(loan_lead.loan_product))
+		)
+
 	loan_application = frappe.new_doc("Loan Application")
+	loan_application.applicant_type = "Customer"
+	loan_application.company = company
 	loan_application.applicant_email_address = loan_lead.email
 	loan_application.applicant_name = loan_lead.applicant_name
 	loan_application.applicant_phone_number = loan_lead.mobile_number
 	loan_application.loan_product = loan_lead.loan_product
 	loan_application.loan_amount = loan_lead.loan_amount
 	loan_application.repayment_periods = loan_lead.proposed_tenure
+	loan_application.insert()
 
-	loan_application.save()
+	return loan_application.name
