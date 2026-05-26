@@ -2,9 +2,9 @@
 	<a href="https://frappe.io/lending">
 		<img src=".github/lending-logo.png" height="80px" width="80px" alt="Frappe Lending Logo">
 	</a>
-	<h2>Frappe Lending</h2>
+	<h2>RPB Lending</h2>
 	<p align="center">
-		<p>Open Source loan management system</p>
+		<p>Loan management application built on Frappe and ERPNext</p>
 	</p>
 
 [![CI](https://github.com/frappe/lending/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/frappe/lending/actions/workflows/ci.yml)
@@ -16,54 +16,56 @@
 	<img src=".github/lending-hero.png"/>
 </div>
 
-<div align="center">
-	<a href="https://frappe.io/lending">Website</a>
-	-
-	<a href="https://docs.frappe.io/lending/introduction">Documentation</a>
-</div>
+## Overview
 
-## Frappe Lending
+`info-rbp/rpb-lending` is a Frappe app for loan origination and loan servicing. The current application is still runtime-coupled to Frappe and ERPNext and should be treated as the live system of record for the existing platform.
 
-Frappe Lending is a comprehensive Loan Management System (LMS) designed to streamline and automate the entire loan lifecycle, from loan origination to closure. Built on ERPNext and Frappe Framework, an open-source low-code platform, it provides financial institutions, NBFCs, and lenders with the tools they need to efficiently manage loans while ensuring compliance and reducing operational overhead.
+Core capabilities visible in the repository include:
 
+- loan products, pricing, and repayment schedules
+- loan leads and applications
+- disbursement, repayment, and interest accrual
+- collateral/security management
+- delinquency and classification processing
+- accounting-linked operations through ERPNext
 
-## Key Features
+## Current Production-Hardening Focus
 
-- **Loan Products & Management**: Create and manage flexible loan products with customizable terms, interest rates, and repayment options.
-- **Loan Operations**: Streamline the entire loan life cycle from application to disbursement and repayment.
-- **Collateral and Security**: Track and manage collaterals, guarantees, and securities linked to loans.
-- **Financial Accounting**: Ensure accurate financial tracking with automated accounting entries and real-time reporting.
-- **Billing and Taxation**: Automate billing, interest calculations, and tax compliance for seamless transactions.
-- **Risk and Compliance**: Mitigate risks with accurate credit reporting and compliance.
-- **Co-Lending and Loan Transfers**: Facilitate partnerships, co-lending models, and efficient loan transfers.
+This repository is being improved on two tracks:
 
+1. Hardening the current Frappe application so the existing system is safer and more stable.
+2. Defining the foundation for a future independent platform rebuild.
 
-## Under the Hood
+The recent hardening work in this repository focuses on:
 
-1. [**ERPNext**](https://github.com/frappe/erpnext): ERPNext is business management software that helps companies stay on top of their operations, whether it’s tracking inventory, managing finances, handling projects, or keeping customers happy.
+- stricter validation on whitelisted API methods
+- permission checks before sensitive write operations
+- more reliable loan-lead conversion into loan applications
+- better regression coverage for origination edge cases
+- CI maintenance to avoid deprecated GitHub Actions behavior
 
-2. [**Frappe Framework**](https://github.com/frappe/frappe): A full-stack web application framework written in Python and Javascript. The framework provides a robust foundation for building web applications, including a database abstraction layer, user authentication, and a REST API.
+## Local Development
 
+This app expects a working Frappe Bench environment with ERPNext installed.
 
-## Contributing
+At a high level:
 
-1. [Issue Guidelines](https://github.com/frappe/erpnext/wiki/Issue-Guidelines)
-1. [Report Security Vulnerabilities](https://erpnext.com/security)
-1. [Pull Request Requirements](https://github.com/frappe/erpnext/wiki/Contribution-Guidelines)
+1. Create a Frappe Bench environment compatible with the app's target Frappe/ERPNext versions.
+2. Install ERPNext.
+3. Install this app into the bench.
+4. Create a site and install `lending`.
+5. Run tests with `bench --site <site> run-tests --app lending`.
 
+## CI
 
-## Logo and Trademark Policy
+CI is defined in `.github/workflows/ci.yml` and runs the server-side test suite in parallel containers against MariaDB.
 
-Please read our [Logo and Trademark Policy](TRADEMARK_POLICY.md).
+## Modernization Direction
 
-<br />
-<br />
-<div align="center" style="padding-top: 0.75rem;">
-	<a href="https://frappe.io" target="_blank">
-		<picture>
-			<source media="(prefers-color-scheme: dark)" srcset="https://frappe.io/files/Frappe-white.png">
-			<img src="https://frappe.io/files/Frappe-black.png" alt="Frappe Technologies" height="28"/>
-		</picture>
-	</a>
-</div>
+The long-term target is a clean-room redevelopment rather than a direct framework migration. The planned target stack is:
 
+- Appwrite for auth, core data services, realtime, and backend application capabilities
+- Cloudflare Pages, Workers, R2, Queues, and Zero Trust for delivery and edge operations
+- a standalone modern frontend instead of Frappe Desk as the primary product surface
+
+That future architecture should be built alongside the current system, not mixed into the operational Frappe codepaths prematurely.
